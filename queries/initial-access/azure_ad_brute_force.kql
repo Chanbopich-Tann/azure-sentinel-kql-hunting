@@ -1,1 +1,16 @@
+// Title: Azure AD Failed Login Spike (Potential Brute-Force / Password Spray)
+// MITRE ATT&CK: T1110.001 - Brute Force: Password Guessing
+// Data Source: SigninLogs
 
+SigninLogs
+| where TimeGenerated > ago(24h)
+| where ResultType in (50126, 50053) // Invalid password or locked out account
+| summarize 
+    FailedAttempts = count(),
+    TargetAccounts = dcount(UserPrincipalName),
+    FirstSeen = min(TimeGenerated),
+    LastSeen = max(TimeGenerated)
+    by IPAddress, Location, AppDisplayName
+| where FailedAttempts >= 10
+| project FirstSeen, LastSeen, IPAddress, Location, TargetAccounts, FailedAttempts, AppDisplayName
+| sort by FailedAttempts desc
