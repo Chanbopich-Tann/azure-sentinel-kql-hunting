@@ -1,0 +1,12 @@
+// Title: Privileged Azure RBAC Role Assigned (Owner / Contributor / SecAdmin)
+// MITRE ATT&CK: T1098.003 - Account Manipulation: Azure Role Assignments
+// Data Source: AuditLogs
+
+AuditLogs
+| where TimeGenerated > ago(7d)
+| where OperationName == "Add member to role" or OperationName == "Add eligible member to role"
+| extend TargetRole = tostring(TargetResources[0].modifiedProperties[1].newValue)
+| extend TargetUser = tostring(TargetResources[0].userPrincipalName)
+| where TargetRole has_any ("Owner", "Contributor", "Global Administrator", "Privileged Role Administrator")
+| project TimeGenerated, InitiatedBy = Identity, TargetUser, TargetRole, Result
+| sort by TimeGenerated desc
